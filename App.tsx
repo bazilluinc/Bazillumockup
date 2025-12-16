@@ -8,8 +8,6 @@ import { Button } from './components/Button';
 import { FileUploader } from './components/FileUploader';
 import { generateMockup, generateAsset, generateRealtimeComposite } from './services/geminiService';
 import { Asset, GeneratedMockup, AppView, LoadingState, PlacedLayer } from './types';
-import { useApiKey } from './hooks/useApiKey';
-import ApiKeyDialog from './components/ApiKeyDialog';
 
 // --- Intro Animation Component ---
 
@@ -253,7 +251,6 @@ const AssetSection = ({
   assets, 
   onAdd, 
   onRemove,
-  validateApiKey,
   onApiError
 }: { 
   title: string, 
@@ -262,7 +259,6 @@ const AssetSection = ({
   assets: Asset[], 
   onAdd: (a: Asset) => void, 
   onRemove: (id: string) => void,
-  validateApiKey: () => Promise<boolean>,
   onApiError: (e: any) => void
 }) => {
   const [mode, setMode] = useState<'upload' | 'generate'>('upload');
@@ -272,9 +268,6 @@ const AssetSection = ({
   const handleGenerate = async () => {
     if (!genPrompt) return;
     
-    // Validate API key first
-    if (!(await validateApiKey())) return;
-
     setIsGenerating(true);
     try {
       const b64 = await generateAsset(genPrompt, type);
@@ -390,33 +383,11 @@ export default function App() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState<LoadingState>({ isGenerating: false, message: '' });
 
-  // API Key Management
-  const { showApiKeyDialog, setShowApiKeyDialog, validateApiKey, handleApiKeyDialogContinue } = useApiKey();
-
   // API Error Handling Logic
   const handleApiError = (error: any) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    let shouldOpenDialog = false;
-
-    // Check for specific Server-side Error Signatures
-    if (errorMessage.includes('Requested entity was not found')) {
-      console.warn('Model not found - likely a billing/key issue');
-      shouldOpenDialog = true;
-    } else if (
-      errorMessage.includes('API_KEY_INVALID') ||
-      errorMessage.includes('API key not valid') ||
-      errorMessage.includes('PERMISSION_DENIED') || 
-      errorMessage.includes('403')
-    ) {
-      console.warn('Invalid API Key or Permissions');
-      shouldOpenDialog = true;
-    }
-
-    if (shouldOpenDialog) {
-      setShowApiKeyDialog(true);
-    } else {
-      alert(`Operation failed: ${errorMessage}`);
-    }
+    console.error(error);
+    alert(`Operation failed: ${errorMessage}`);
   };
 
   // State for Dragging
@@ -568,11 +539,6 @@ export default function App() {
          return;
     }
 
-    // Check API Key before proceeding
-    if (!(await validateApiKey())) {
-      return;
-    }
-
     const currentPrompt = prompt;
 
     setLoading({ isGenerating: true, message: 'Analyzing composite geometry...' });
@@ -604,11 +570,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans flex overflow-hidden relative">
-      
-      {/* API Key Dialog */}
-      {showApiKeyDialog && (
-        <ApiKeyDialog onContinue={handleApiKeyDialogContinue} />
-      )}
 
       {/* Sidebar Navigation (Desktop) */}
       <aside className="w-64 border-r border-zinc-800 bg-zinc-950/50 hidden md:flex flex-col">
@@ -817,7 +778,6 @@ export default function App() {
                     assets={assets.filter(a => a.type === 'product')}
                     onAdd={(a) => setAssets(prev => [...prev, a])}
                     onRemove={(id) => setAssets(prev => prev.filter(a => a.id !== id))}
-                    validateApiKey={validateApiKey}
                     onApiError={handleApiError}
                   />
 
@@ -829,7 +789,6 @@ export default function App() {
                     assets={assets.filter(a => a.type === 'logo')}
                     onAdd={(a) => setAssets(prev => [...prev, a])}
                     onRemove={(id) => setAssets(prev => prev.filter(a => a.id !== id))}
-                    validateApiKey={validateApiKey}
                     onApiError={handleApiError}
                   />
                 </div>
