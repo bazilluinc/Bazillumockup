@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { Asset, PlacedLayer } from "../types";
 
 /**
@@ -23,7 +23,7 @@ export const generateMockup = async (
   try {
     // Create instance here to get latest key
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const model = 'gemini-3-pro-image-preview';
+    const model = 'gemini-2.5-flash-image';
 
     // 1. Add Product Base
     const parts: any[] = [
@@ -69,9 +69,6 @@ export const generateMockup = async (
     const response = await ai.models.generateContent({
       model,
       contents: { parts },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
     });
 
     const candidates = response.candidates;
@@ -96,7 +93,7 @@ export const generateMockup = async (
 export const generateAsset = async (prompt: string, type: 'logo' | 'product'): Promise<string> => {
    try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const model = 'gemini-3-pro-image-preview';
+    const model = 'gemini-2.5-flash-image';
     
     const enhancedPrompt = type === 'logo' 
         ? `A high-quality, professional vector-style logo design of a ${prompt}. Isolated on a pure white background. Minimalist and clean, single distinct logo.`
@@ -107,9 +104,6 @@ export const generateAsset = async (prompt: string, type: 'logo' | 'product'): P
         contents: {
             parts: [{ text: enhancedPrompt }]
         },
-        config: {
-            responseModalities: [Modality.IMAGE],
-        }
     });
 
     const candidates = response.candidates;
@@ -137,7 +131,7 @@ export const generateRealtimeComposite = async (
   ): Promise<string> => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const model = 'gemini-3-pro-image-preview';
+      const model = 'gemini-2.5-flash-image';
   
       const parts = [
         {
@@ -158,9 +152,6 @@ export const generateRealtimeComposite = async (
       const response = await ai.models.generateContent({
         model,
         contents: { parts },
-        config: {
-          responseModalities: [Modality.IMAGE],
-        },
       });
   
       const candidates = response.candidates;
